@@ -1,0 +1,10 @@
+
+project.ext {
+    // 1. Configuration of text repository.
+    // Path to orca-config
+    orcainventory = "/cite/lib/mumbojumbo/testdata/orcaConf.csv"
+
+    // Path to directory where .tsv or .csv files for ORCA analyses are
+    orcafiles = "/cite/lib/mumbojumbo/testdata/orcaFiles"
+
+}

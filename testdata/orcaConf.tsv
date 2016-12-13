@@ -1,0 +1,4 @@
+CollURN	VersionString	Filename	ExemplarID
+urn:cite:hmt:clauseAnalysis	v1	clauses.csv	clause
+urn:cite:hmt:tokenAnalysisTest	v1	iliadTokens_abbrev.csv	tokTest
+urn:cite:hmt:tokenAnalysis	v1	IliadTokens.csv	lexTokens

@@ -1,0 +1,116 @@
+import com.github.rjeschke.txtmark.*
+import org.apache.tools.ant.filters.ReplaceTokens
+
+
+apply plugin: 'groovy'
+apply plugin: 'maven'
+
+
+
+apply from: 'versions.gradle'
+apply from: 'conf.gradle'
+
+
+if (hasProperty('pub')) {
+    System.err.print "Using configuration data from ${pub}"
+    File confFile = new File(pub)
+    if (! confFile.exists()) {
+        throw new Exception("No publication configuration file ${pub} found.")
+    } else {
+        apply from: pub
+    }
+
+} else {
+    File confFile = new File("pub.gradle")
+    if (! confFile.exists()) {
+        throw new Exception("No publication configuration file ${confFile} found.")
+    } else {
+        println "Using default configuration in 'pub.gradle'"
+        apply from: "pub.gradle"
+    }
+}
+
+group = "edu.holycross.shot"
+version = "0.1.0"
+
+
+buildscript {
+  repositories {
+    mavenCentral()
+  }
+  dependencies {
+    classpath group: 'com.github.rjeschke', name: 'txtmark', version: '0.11'
+  }
+}
+
+
+test {
+    testLogging {
+        events "passed", "skipped", "failed", "standardOut", "standardError"
+    }
+}
+
+
+
+repositories {
+    mavenCentral()
+
+    // for cite libs:
+    maven {
+        url "http://beta.hpcc.uh.edu/nexus/content/groups/public"
+	//  url "http://beta.hpcc.uh.edu/nexus/content/repositories/releases"
+    }
+}
+
+dependencies {
+    compile	   group: 'org.codehaus.groovy', name: 'groovy-all', version: groovyVersion
+
+    compile group: 'net.sf.opencsv', name: 'opencsv', version : opencsvVersion
+
+    compile group: 'edu.harvard.chs', name : 'cite' , version: citeVersion
+    runtime group: 'edu.harvard.chs', name : 'cite' , version: citeVersion
+
+  //    testCompile group: 'junit', name: 'junit', version: junitVersion
+    testCompile 'junit:junit:4.11'
+	  testCompile 'org.concordion:concordion:1.4.4'
+  // testCompile group :'xmlunit', name: 'xmlunit', version: xmlunitversion
+}
+
+
+
+
+uploadArchives {
+  repositories.mavenDeployer {
+        repository(url: nexusRepo) {
+            authentication (userName: nexusUser, password: nexusPassword)
+        }
+    }
+}
+
+task orca {
+  description = "Generates RDF for configured NYSI"
+}
+
+orca.doFirst {
+  println "Processing ORCA Collections in " + orcainventory + "."
+  println "Using files in " + orcafiles + "."
+}
+
+orca.doLast {
+
+	File outDir = new File("${buildDir}/orcas")
+	if (! outDir.exists()) {
+		outDir.mkdir()
+	}
+
+	try {
+		File orcaInv = new File("${orcainventory}")
+		File orcaDir = new File("${orcafiles}")
+		} catch (Exception e) {
+			System.err.println "orca: unable to create inventory and archive!"
+			throw e
+		}
+
+		//OrcaSerializer orcaserial = new OrcaSerializer(orcainventory, orcafiles)
+
+	}
