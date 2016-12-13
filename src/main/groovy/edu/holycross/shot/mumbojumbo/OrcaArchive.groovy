@@ -65,6 +65,7 @@ class OrcaArchive {
 		String fileName
 		String exemplarId
 		String serviceUrl
+		String description
 		OrcaCollection tempOC
 		def returnArray = []
 
@@ -76,8 +77,8 @@ class OrcaArchive {
 		Integer num = 0
 		reader.readAll().eachWithIndex { ln, i ->
 			num++
-			if (ln.size() != 5){
-				throw new Exception("OrcaArchive: inventory must have five columns")
+			if (ln.size() != 6){
+				throw new Exception("OrcaArchive: inventory must have six columns")
 			}
 
 			if ( i > 0){
@@ -91,9 +92,10 @@ class OrcaArchive {
 				fileName = ln[2]
 				exemplarId = ln[3]
 				serviceUrl = ln[4]
+				description = ln[5]
 				try{
 					orcaFiles.eachFileMatch(ln[2]){ f ->
-						tempOC = new OrcaCollection(urn,versionString,f.toFile(),exemplarId,serviceUrl)
+						tempOC = new OrcaCollection(urn,versionString,f.toFile(),exemplarId,serviceUrl,description)
 						returnArray << tempOC
 					}
 				} catch (Exception e){
@@ -123,6 +125,7 @@ class OrcaArchive {
 		String fileName
 		String exemplarId
 		String serviceUrl
+		String description
 		OrcaCollection tempOC
 		def returnArray = []
 
@@ -132,20 +135,13 @@ class OrcaArchive {
 
 		Integer num = 0
 		invFile.eachLine{ ln, i ->
-			System.err.println("Line: ${i}")
-			System.err.println(ln)
 			num++
-			if (ln.tokenize("\t").size() != 5){
-				throw new Exception("OrcaArchive: inventory must have five columns")
+			if (ln.tokenize("\t").size() != 6){
+				throw new Exception("OrcaArchive: inventory must have six columns")
 			}
 
 			if ( i > 1){ // Why the hell is the eachLine index 1-based?
 				try{
-					System.err.println(ln.tokenize("\t")[0])
-					System.err.println(ln.tokenize("\t")[1])
-					System.err.println(ln.tokenize("\t")[2])
-					System.err.println(ln.tokenize("\t")[3])
-					System.err.println(ln.tokenize("\t")[4])
 					urn = new CiteUrn(ln.tokenize("\t")[0])
 				} catch (Exception e){
 						throw new Exception("OrcaArcive: bad CITE URN for collection URN: ${urn}")
@@ -155,9 +151,10 @@ class OrcaArchive {
 				fileName = ln.tokenize("\t")[2]
 				exemplarId = ln.tokenize("\t")[3]
 				serviceUrl = ln.tokenize("\t")[4]
+				description = ln.tokenize("\t")[5]
 				try{
 					orcaFiles.eachFileMatch(ln.tokenize("\t")[2]){ f ->
-						tempOC = new OrcaCollection(urn,versionString,f.toFile(),exemplarId,serviceUrl)
+						tempOC = new OrcaCollection(urn,versionString,f.toFile(),exemplarId,serviceUrl,description)
 						returnArray << tempOC
 					}
 				} catch (Exception e){
@@ -169,6 +166,22 @@ class OrcaArchive {
 
 		return returnArray
 
+	}
+
+	void serializeOrcaCollection(OrcaCollection oc){
+	 	System.err.println("Serializing ${oc.collectionUrn} to collection.")
+	}
+
+	void serializeCollectionInventoryFragment(OrcaCollection oc){
+	 	System.err.println("Serializing collection inventory fragment for ${oc.collectionUrn}.")
+	}
+
+	void serializeCtsTextInventoryFragment(OrcaCollection oc){
+	 	System.err.println("Serializing CTS TextInventory fragment for ${oc.collectionUrn}.")
+	}
+
+	void serializeAnalyticalExemplar(OrcaCollection oc){
+	 	System.err.println("Serializing ${oc.collectionUrn} to Analytical Exemplar.")
 	}
 
 }
