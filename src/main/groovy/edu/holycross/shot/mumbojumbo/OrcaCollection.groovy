@@ -14,6 +14,7 @@ class OrcaCollection {
 	String versionString
 	File orcaFile
 	String exemplarId
+	String ctsServiceUrl
 
 
   /** Constructor taking String name of a directory.
@@ -24,12 +25,13 @@ class OrcaCollection {
 	 * @param exemplarId String, the exmplar-id component of an analytical exemplar CTS URN
    * @throws Exception if if orcaFile cannot be found
    */
-  OrcaCollection(CiteUrn collectionUrn, String versionString, File orcaFile, String exemplarId)
+  OrcaCollection(CiteUrn collectionUrn, String versionString, File orcaFile, String exemplarId, String ctsServiceUrl)
   throws Exception {
     this.collectionUrn = collectionUrn
     this.versionString = versionString
     this.orcaFile = orcaFile
 		this.exemplarId = exemplarId
+		this.ctsServiceUrl = ctsServiceUrl
 
 		System.err.println("orcaFile: ${this.orcaFile.getAbsolutePath()}")
 		System.err.println("orcaFile exists: ${this.orcaFile.isFile()}")

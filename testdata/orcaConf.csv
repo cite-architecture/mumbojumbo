@@ -1,0 +1,4 @@
+"CollURN","VersionString","Filename","ExemplarID","CtsServiceUrl"
+"urn:cite:hmt:clauseAnalysis","v1","clauses.csv","clause","http://localhost:8080/sparqlcts/api?"
+"urn:cite:hmt:tokenAnalysisTest","v1","iliadTokens_abbrev.csv","tokTest","http://localhost:8080/sparqlcts/api?"
+"urn:cite:hmt:tokenAnalysis	v1","v1","IliadTokens.csv","lexTokens","http://localhost:8080/sparqlcts/api?"

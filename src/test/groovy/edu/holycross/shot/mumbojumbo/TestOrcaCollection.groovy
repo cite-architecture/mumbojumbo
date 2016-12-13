@@ -27,10 +27,12 @@ class TestOrcaCollection extends GroovyTestCase {
 		 String version = "v1"
 		 File of = new File("testdata/orcaConf.tsv")
 		 String eid = "clause"
+		 String sUrl = "http://localhost:8080/sparqlcts/api?"
 
-		 OrcaCollection oc = new OrcaCollection(urn,version,of,eid)
+		 OrcaCollection oc = new OrcaCollection(urn,version,of,eid,sUrl)
 
 		 assert oc.versionString == "v1"
+		 assert oc.orcaFile.isFile()
 
 	 }
 
