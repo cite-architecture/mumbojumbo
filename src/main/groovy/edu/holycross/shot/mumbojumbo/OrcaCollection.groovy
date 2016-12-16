@@ -34,8 +34,6 @@ class OrcaCollection {
 		this.ctsServiceUrl = ctsServiceUrl
 		this.description = description
 
-		System.err.println("orcaFile: ${this.orcaFile.getAbsolutePath()}")
-		System.err.println("orcaFile exists: ${this.orcaFile.isFile()}")
 
 		if ( !(this.orcaFile.exists()) ){
 			throw new Exception("OrcaCollection: orcaFile does not exist.")

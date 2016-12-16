@@ -39,10 +39,8 @@ class OrcaArchive {
 
 		// tsv or csv?
 		if (this.invFile.getName().contains(".csv")){
-				System.err.println("CSV!!")
 				orcaCollections = readCsvInventory(this.invFile, this.sourceDir)
 		} else if (this.invFile.getName().contains(".tsv")){
-				System.err.println("TSV!!")
 				orcaCollections = readTsvInventory(this.invFile, this.sourceDir)
 		} else {
 			throw new Exception("Inventory file must be .csv or .tsv")
@@ -71,7 +69,6 @@ class OrcaArchive {
 
 
 
-		System.err.println("About to read file: ${invFile}")
 
 		CSVReader reader = new CSVReader(new FileReader(invFile))
 		Integer num = 0
@@ -131,7 +128,6 @@ class OrcaArchive {
 
 
 
-		System.err.println("About to read file: ${invFile}")
 
 		Integer num = 0
 		invFile.eachLine{ ln, i ->
@@ -168,20 +164,78 @@ class OrcaArchive {
 
 	}
 
-	void serializeOrcaCollection(OrcaCollection oc){
-	 	System.err.println("Serializing ${oc.collectionUrn} to collection.")
+
+	/** Serializes an OrcaCollection object's data to…
+	* a collection .tsv file
+	* an 82xf CTS file
+	* a CollectionInventory fragment
+	* a TextInventory fragment
+	* All of this happens in one umbrella-method, since
+	* we need the exemplar CTS URN when we write out the collection-object
+	* @param OrcaCollection oc
+	* @throws Exception if it can't open or write to its files
+	*/
+	void serialize(OrcaCollection oc)
+	throws Exception{
+
+		try{
+
+			// If this.outputDir doesn't exists, make it
+			if ( Files.exists(this.outputDir)){
+			} else {
+				new File("${this.outputDir}").mkdirs()
+			}
+
+			OrcaSerializer os = new OrcaSerializer(oc, this.outputDir)
+
+
+
+			// Write Collection Inventory Fragment
+		  // For reference…
+			//		- OrcaRelationUrn
+			//		- AnalyzedText
+			//				verb: http://www.homermultitext.org/orca/rdf/analyzedBy
+			//				inverseVerb: http://www.homermultitext.org/orca/rdf/analyzes
+			//		- Sequence
+			//		- AnalysisUrn
+			//				verb: http://www.homermultitext.org/orca/rdf/analysisFor
+			//				inverseVerb: http://www.homermultitext.org/orca/rdf/hasAnalysis
+			//		- TextDeformation
+			//		- AnalyticalExemplarUrn
+			// Write Analytical Exemplar _and_ CITE-Indices
+			// Index:
+			//	<version-level CTS URN> http://www.homermultitext.org/orca/rdf/exemplifiedBy <exemp-URN>
+			//	<exemp-URN>  http://www.homermultitext.org/orca/rdf/exemplifies <version-URN>
+			//
+
+
+
+			// Get the ORCA file,do a pass to check integrity and grab the CTS stuff
+			CtsUrn cts_analyticalExemplarUrn
+			CiteUrn cite_analysisUrn
+			CSVReader reader = new CSVReader(new FileReader(oc.orcaFile))
+			reader.readAll().eachWithIndex { ln, i ->
+				if( ln.size() != 3 ){
+					throw new Exception("Orca file must have three columns: AnalyzedText, AnalysisURN, textDeformation")
+				}
+				if( i > 0 ){ // skip header
+					try{
+						os.writeAnalysis(ln)
+					} catch (Exception e){
+						os.closeFiles()
+							throw new Exception("OrcaArchive. Serialize: Failed to make CTS Urn. " + e)
+					}
+				}
+			}
+
+			os.closeFiles()
+
+		} catch(Exception e){
+			throw new Exception("OrcaArchive: Serialize exception: ${e}")
+		}
+
+
 	}
 
-	void serializeCollectionInventoryFragment(OrcaCollection oc){
-	 	System.err.println("Serializing collection inventory fragment for ${oc.collectionUrn}.")
-	}
-
-	void serializeCtsTextInventoryFragment(OrcaCollection oc){
-	 	System.err.println("Serializing CTS TextInventory fragment for ${oc.collectionUrn}.")
-	}
-
-	void serializeAnalyticalExemplar(OrcaCollection oc){
-	 	System.err.println("Serializing ${oc.collectionUrn} to Analytical Exemplar.")
-	}
 
 }
