@@ -17,15 +17,15 @@ class OrcaCollection {
 	String ctsServiceUrl
 	String description
 
-  /** Constructor taking String name of a directory.
-   * @param collectionUrn a CITE URN
-   * @param versionString String defining the version of objects in this collectionUrn
+  /** constructor taking string name of a directory.
+   * @param collectionurn a cite urn
+   * @param versionstring string defining the version of objects in this collectionurn
 	 * (allows versioned collections to be built independently)
-	 * @param orcaFile File, the name of the file that records the ORCA records
-	 * @param exemplarId String, the exmplar-id component of an analytical exemplar CTS URN
-   * @throws Exception if if orcaFile cannot be found
+	 * @param orcafile file, the name of the file that records the orca records
+	 * @param exemplarid string, the exmplar-id component of an analytical exemplar cts urn
+   * @throws exception if if orcafile cannot be found
    */
-  OrcaCollection(CiteUrn collectionUrn, String versionString, File orcaFile, String exemplarId, String ctsServiceUrl, String description)
+	OrcaCollection(CiteUrn collectionUrn, String versionString, File orcaFile, String exemplarId, String ctsServiceUrl, String description)
   throws Exception {
     this.collectionUrn = collectionUrn
     this.versionString = versionString
