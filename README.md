@@ -1,6 +1,6 @@
 # "Mumbojumbo":  a build system for OHCO2 Realigned Citable Analyses (ORCAs) #
 
-`mumbojumbo` generates CITE Collections and a CTS Analytical Exemplars three-column input files of analyses.
+`mumbojumbo` generates CITE Collections and a CTS Analytical Exemplars from three-column input files of analyses.
 
 
 ## Data sources ##
