@@ -87,13 +87,6 @@ class OrcaSerializer {
 		}
 	}
 
-	void writeAnalysis(String[] tabbedLine){
-		System.err.println("Would write '${tabbedLine}'.")
-	}
-
-	void writeExemplar(){
-			System.err.printl("Would write exemplar for ${}.")
-	}
 
 	void serializeCollectionInventory(){
 		this.collInvOut.append("""<citeCollection canonicalId="URN" label="TextDeformation" urn="${this.oc.collectionUrn}">""")
@@ -159,6 +152,86 @@ class OrcaSerializer {
 		""")
 		this.aeTiOut.close()
 
+	}
+
+	Boolean validateCollection(){
+			// Get the ORCA file,do a pass to check integrity and grab the CTS stuff
+			// Check:
+			// - all lines have three columns
+			// - the first column is a well-formed CTS URN
+			// - the second is a well-formed CITE URN
+			// - all the CTS URNs are identical up to the Version level
+			CtsUrn cts_analyticalExemplarUrn
+			CiteUrn cite_analysisUrn
+			CtsUrn cts_testUrn
+			CSVReader reader = new CSVReader(new FileReader(this.oc.orcaFile))
+			reader.readAll().eachWithIndex { ln, i ->
+				if( ln.size() != 3 ){
+					throw new Exception("Orca file must have three columns: AnalyzedText, AnalysisURN, textDeformation")
+				}
+				if( i > 0 ){ // skip header
+					try{
+						Boolean isValid = validateOrcaLine(ln)
+					} catch (Exception e){
+						closeFiles()
+						System.err.println("OrcaArchive. Failed validation at line ${i+1}: ${ln} (Error: " + e + ")")
+						throw new Exception("OrcaArchive. Failed validation at line ${i+1}: ${ln} (Error: " + e + ")")
+					}
+				}
+
+				// Grab the first CTS URN and make sure all subsequent CTS URNs are identical to the Version level
+				if (i > 0 ){ // skip header row
+					Boolean isValid = this.oc.validateExemplarIntegrity(this.oc.textUrn, ln)
+					if( i > 1 ){
+						if ( !(isValid) ){
+							closeFiles()
+							System.err.println("OrcaArchive. Failed exemplar citation validation at line ${i+1}: ${ln}")
+							throw new Exception("OrcaArchive. Failed exemmplar citation validation at line ${i+1}: ${ln}")
+						}
+					}
+				}
+			}
+		return true
+	}
+
+	Boolean validateOrcaLine(String[] ln)
+		throws Exception {
+			CtsUrn ctsurn
+			CtsUrn testurn
+			CiteUrn citeurn
+
+			Boolean returnVal = true
+
+			try{
+				 assert ln.size() == 3
+			} catch (Exception e){
+				returnVal = false
+				throw new Exception("Incorrect number of records (should be 3): ${ln}")
+			}
+			try{
+				ctsurn = new CtsUrn(ln[0])
+			} catch (Exception e){
+				returnVal = false
+				throw new Exception("Invalid CtsUrn")
+			}
+			try{
+				citeurn = new CiteUrn(ln[1])
+			} catch (Exception e){
+				returnVal = false
+				throw new Exception("Invalid CiteUrn")
+			}
+
+			return returnVal
+
+	}
+
+
+	void writeAnalysis(String[] tabbedLine){
+		System.err.println("Would write '${tabbedLine}'.")
+	}
+
+	void writeExemplar(){
+			System.err.printl("Would write exemplar for ${}.")
 	}
 
 }

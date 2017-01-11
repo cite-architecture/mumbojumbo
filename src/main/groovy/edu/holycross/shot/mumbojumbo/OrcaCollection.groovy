@@ -70,6 +70,30 @@ class OrcaCollection {
 			return exemplarUrn
 	}
 
+  Boolean validateExemplarIntegrity(CtsUrn testUrn, String[] ln){
+			CtsUrn thisUrn
+			CtsUrn thisWOPassage
+			String thisVersionUrnStr
+			CtsUrn testWOPassage
+			String testVersionUrnStr
+
+
+			Boolean returnVal
+			try{
+				thisUrn = new CtsUrn(ln[0])
+				thisWOPassage = new CtsUrn(thisUrn.getUrnWithoutPassage())
+				thisVersionUrnStr = thisWOPassage.reduceToVersion()
+				testWOPassage = new CtsUrn(testUrn.getUrnWithoutPassage())
+				testVersionUrnStr = testWOPassage.reduceToVersion()
+				returnVal = (thisVersionUrnStr == testVersionUrnStr)
+			} catch (Exception e){
+				returnVal = false
+				throw new Exception("OrcaArchive.validateExemplarIntegrity failed on ${thisUrn}: ${e}")
+			}
+
+			return returnVal
+
+	}
 
 
 }

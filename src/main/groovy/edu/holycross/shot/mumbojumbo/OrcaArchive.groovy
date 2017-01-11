@@ -201,41 +201,11 @@ class OrcaArchive {
 			OrcaSerializer os = new OrcaSerializer(oc, this.outputDir)
 
 
-			// Get the ORCA file,do a pass to check integrity and grab the CTS stuff
-			// Check:
-			// - all lines have three columns
-			// - the first column is a well-formed CTS URN
-			// - the second is a well-formed CITE URN
-			// - all the CTS URNs are identical up to the Version level
-			CtsUrn cts_analyticalExemplarUrn
-			CiteUrn cite_analysisUrn
-			CtsUrn cts_testUrn
-			CSVReader reader = new CSVReader(new FileReader(oc.orcaFile))
-			reader.readAll().eachWithIndex { ln, i ->
-				if( ln.size() != 3 ){
-					throw new Exception("Orca file must have three columns: AnalyzedText, AnalysisURN, textDeformation")
-				}
-				if( i > 0 ){ // skip header
-					try{
-						Boolean isValid = validateOrcaLine(ln)
-					} catch (Exception e){
-						os.closeFiles()
-						System.err.println("OrcaArchive. Failed validation at line ${i+1}: ${ln} (Error: " + e + ")")
-						throw new Exception("OrcaArchive. Failed validation at line ${i+1}: ${ln} (Error: " + e + ")")
-					}
-				}
-
-				// Grab the first CTS URN and make sure all subsequent CTS URNs are identical to the Version level
-				if (i > 0 ){ // skip header row
-					Boolean isValid = validateExemplarIntegrity(oc.textUrn, ln)
-					if( i > 1 ){
-						if ( !(isValid) ){
-							os.closeFiles()
-							System.err.println("OrcaArchive. Failed exemplar citation validation at line ${i+1}: ${ln}")
-							throw new Exception("OrcaArchive. Failed exemmplar citation validation at line ${i+1}: ${ln}")
-						}
-					}
-				}
+			// Do a validation pass, so as not to waste a lot of time
+			try{
+				Boolean isValid = os.validateCollection()
+			} catch(Exception e){
+					throw new Exception("OrcaArchive: Validation Exception. ${e}")
 			}
 
 
@@ -273,60 +243,6 @@ class OrcaArchive {
 
 	}
 
-	Boolean validateOrcaLine(String[] ln)
-		throws Exception {
-			CtsUrn ctsurn
-			CtsUrn testurn
-			CiteUrn citeurn
 
-			Boolean returnVal = true
-
-			try{
-				 assert ln.size() == 3
-			} catch (Exception e){
-				returnVal = false
-				throw new Exception("Incorrect number of records (should be 3): ${ln}")
-			}
-			try{
-				ctsurn = new CtsUrn(ln[0])
-			} catch (Exception e){
-				returnVal = false
-				throw new Exception("Invalid CtsUrn")
-			}
-			try{
-				citeurn = new CiteUrn(ln[1])
-			} catch (Exception e){
-				returnVal = false
-				throw new Exception("Invalid CiteUrn")
-			}
-
-			return returnVal
-
-	}
-
-  Boolean validateExemplarIntegrity(CtsUrn testUrn, String[] ln){
-			CtsUrn thisUrn
-			CtsUrn thisWOPassage
-			String thisVersionUrnStr
-			CtsUrn testWOPassage
-			String testVersionUrnStr
-
-
-			Boolean returnVal
-			try{
-				thisUrn = new CtsUrn(ln[0])
-				thisWOPassage = new CtsUrn(thisUrn.getUrnWithoutPassage())
-				thisVersionUrnStr = thisWOPassage.reduceToVersion()
-				testWOPassage = new CtsUrn(testUrn.getUrnWithoutPassage())
-				testVersionUrnStr = testWOPassage.reduceToVersion()
-				returnVal = (thisVersionUrnStr == testVersionUrnStr)
-			} catch (Exception e){
-				returnVal = false
-				throw new Exception("OrcaArchive.validateExemplarIntegrity failed on ${thisUrn}: ${e}")
-			}
-
-			return returnVal
-
-	}
 
 }
