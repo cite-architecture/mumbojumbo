@@ -1,4 +1,4 @@
-CollURN	VersionString	Filename	ExemplarID	CtsServiceUrl	Description
-urn:cite:hmt:clauseAnalysis	v1	clauses.csv	clause	http://localhost:8080/sparqlcts/api?	Iliad, Perseus ed., analyzed by grammatical clauses
-urn:cite:hmt:tokenAnalysisTest	v1	iliadTokens_abbrev.csv	tokTest	http://localhost:8080/sparqlcts/api?	Iliad, HMT msA ed., word-tokens categorized (abridged)
-urn:cite:hmt:tokenAnalysis	v1	IliadTokens.csv	lexTokens	http://localhost:8080/sparqlcts/api?	Iliad, HMT msA ed., word-tokens categorized (Books 1-10)
+CollURN	VersionString	AnalyzedText	Filename	ExemplarID	CtsServiceUrl	Description
+urn:cite:hmt:clauseAnalysis	v1	urn:cts:greekLit:tlg0012.tlg001.fuPers:	clauses.csv	clauses	http://localhost:8080/sparqlcts/api?	Iliad, Perseus ed., analyzed by grammatical clauses
+urn:cite:hmt:tokenAnalysisTest	v1	urn:cts:greekLit:tlg0012.tlg001.msA:	iliadTokens_abbrev.csv	tokTest	http://localhost:8080/sparqlcts/api?	Iliad, HMT msA ed., word-tokens categorized (abridged)
+urn:cite:hmt:tokenAnalysis	v1	urn:cts:greekLit:tlg0012.tlg001.msA:	IliadTokens.csv	lexTokens	http://localhost:8080/sparqlcts/api?	Iliad, HMT msA ed., word-tokens categorized (Books 1-10)

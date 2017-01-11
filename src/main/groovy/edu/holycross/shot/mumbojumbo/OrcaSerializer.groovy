@@ -12,6 +12,7 @@ class OrcaSerializer {
 		Path outputDir
 		OrcaCollection oc
 		OutputStreamWriter aeOut
+		String aeOutFilename
 		OutputStreamWriter aeTiOut
 		OutputStreamWriter idxOut
 		OutputStreamWriter idxInvOut
@@ -31,9 +32,6 @@ class OrcaSerializer {
 			this.outputDir = outputDir
 			this.oc = oc
 
-
-			System.err.println("Construction OrcaSerializer")
-
 			//File path+name for collection data
 			String collFileName = this.oc.collectionUrn.toString().replaceAll(":","_") + '.tsv'
 			String collOutString = "${this.outputDir}/${collFileName}"
@@ -41,20 +39,21 @@ class OrcaSerializer {
 			this.collOut.write("")
 
 			//File path+name for collectionInventoryFragment
-			String collInvFileName = "collInv_" + this.oc.collectionUrn.toString().replaceAll(":","_") + '.tsv'
+			String collInvFileName = "collInv_" + this.oc.collectionUrn.toString().replaceAll(":","_") + '.xml'
 			String collInvOutString = "${this.outputDir}/${collInvFileName}"
 			this.collInvOut = new OutputStreamWriter(new FileOutputStream(collInvOutString), "UTF-8")
 			this.collInvOut.write("")
 
 			//File path+name for analytical exemplar
-			String aeFileName = "exemplar_" + this.oc.collectionUrn.toString().replaceAll(":","_") + '.tsv'
+			String aeFileName = "exemplar_" + this.oc.collectionUrn.toString().replaceAll(":","_") + '.txt'
 			String aeOutString = "${this.outputDir}/${aeFileName}"
+			this.aeOutFilename = aeFileName // we need this later
 			this.aeOut = new OutputStreamWriter(new FileOutputStream(aeOutString), "UTF-8")
 			this.aeOut.write("")
 			this.aeOut.append("URN#Previous#Sequence#Next#Text\n")
 
 			//File path+name for cts text inventory fragment
-			String aeTiFileName = "ti_" + this.oc.collectionUrn.toString().replaceAll(":","_") + '.tsv'
+			String aeTiFileName = "ti_" + this.oc.collectionUrn.toString().replaceAll(":","_") + '.xml'
 			String aeTiOutString = "${this.outputDir}/${aeTiFileName}"
 			this.aeTiOut = new OutputStreamWriter(new FileOutputStream(aeTiOutString), "UTF-8")
 			this.aeTiOut.write("")
@@ -92,16 +91,74 @@ class OrcaSerializer {
 		System.err.println("Would write '${tabbedLine}'.")
 	}
 
-	String serializeCollectionInventory(){
-		return "collection-xml"
+	void writeExemplar(){
+			System.err.printl("Would write exemplar for ${}.")
 	}
 
-	String serializeIndexInventory(){
-		return "index-xml"
+	void serializeCollectionInventory(){
+		this.collInvOut.append("""<citeCollection canonicalId="URN" label="TextDeformation" urn="${this.oc.collectionUrn}">""")
+		this.collInvOut.append("""
+		        <namespaceMapping abbr="hmt" uri="http://www.homermultitext.org/datans"/>
+		        <extendedBy extension="cite:ORCA"/>
+		        <description xmlns="http://purl.org/dc/elements/1.1/">${this.oc.description}</description>
+		""")
+		this.collInvOut.append("""
+		        <rights xmlns="http://purl.org/dc/elements/1.1/"> All data in this collection are available
+		            under the terms of the Creative Commons Attribution-Non-Commercial 3.0 Unported License,
+		            http://creativecommons.org/licenses/by-nc/3.0/deed.en_US</rights>
+
+		        <orderedBy property="Sequence"/>
+		""")
+		this.collInvOut.append("""
+		        <source type="file" value="${this.oc.orcaFile.getName()}"/>
+		""")
+		this.collInvOut.append("""
+		        <citeProperty name="URN" label="The URN for this association of text with analysis" type="citeurn"></citeProperty>
+		        <citeProperty name="Sequence" label="Sequence" type="number"></citeProperty>
+		        <citeProperty name="AnalyzedText" label="The URN to the passage of text analyzed" type="ctsurn"></citeProperty>
+		        <citeProperty name="AnalysisDataUrn" label="The URN pointing to the analysis of this text" type="citeurn"></citeProperty>
+		        <citeProperty name="TextDeformation" label="A presentational string resulting from applying this analysis to this passage of text" type="string"></citeProperty>
+
+		    </citeCollection>
+		""")
+		this.collInvOut.close()
+	}
+
+	void serializeIndexInventory(){
+		System.err.println("Would serialize Index Fragment for '${this.oc.exemplarId}'")
+
 	}
 
 	String serializeCtsInventory(CtsUrn exemplarUrn){
-		return "index-xml"
+		System.err.println("Would serialize Text Inventory Fragment for '${this.oc.exemplarId}'")
+		this.aeTiOut.append("""
+		<frag>
+			<!-- Paste into the edition/translation element ${this.oc.textUrn} -->
+		""")
+		this.aeTiOut.append("""
+			<exemplar urn="${this.oc.exemplarUrn}">
+		""")
+		this.aeTiOut.append("""
+			 <label xml:lang="eng">Analytical Exemplar:	${this.oc.description}</label>
+	    </exemplar>
+			<!-- Pase into citationconfig.xml -->
+		""")
+		this.aeTiOut.append("""
+			<online urn="${this.oc.exemplarUrn}" type="82xf" docname="${this.aeOutFilename}" nodeformat="text">
+		""")
+		this.aeTiOut.append("""
+					<!-- YOU MUST CUSTOMIZE THE CITATION INFO!
+	        <citationScheme>
+	            <citation label="entry">
+	                <citation label="section"/>
+	            </citation>
+	        </citationScheme>
+					-->
+	    </online>
+		</frag>
+		""")
+		this.aeTiOut.close()
+
 	}
 
 }

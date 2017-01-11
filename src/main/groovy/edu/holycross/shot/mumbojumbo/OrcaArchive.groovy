@@ -61,6 +61,7 @@ class OrcaArchive {
 		CiteUrn urn
 		String versionString
 		String fileName
+		CtsUrn textUrn
 		String exemplarId
 		String serviceUrl
 		String description
@@ -74,25 +75,30 @@ class OrcaArchive {
 		Integer num = 0
 		reader.readAll().eachWithIndex { ln, i ->
 			num++
-			if (ln.size() != 6){
-				throw new Exception("OrcaArchive: inventory must have six columns")
+			if (ln.size() != 7){
+				throw new Exception("OrcaArchive: inventory must have seven columns")
 			}
 
 			if ( i > 0){
 				try{
 					urn = new CiteUrn(ln[0])
 				} catch (Exception e){
-						throw new Exception("OrcaArcive: bad CITE URN for collection URN: ${urn}")
+						throw new Exception("OrcaArcive: bad CITE URN for collection URN: ${ln[0]}")
 				}
 
 				versionString = ln[1]
-				fileName = ln[2]
-				exemplarId = ln[3]
-				serviceUrl = ln[4]
-				description = ln[5]
 				try{
-					orcaFiles.eachFileMatch(ln[2]){ f ->
-						tempOC = new OrcaCollection(urn,versionString,f.toFile(),exemplarId,serviceUrl,description)
+					textUrn = new CtsUrn(ln[2])
+				} catch (Exception e){
+						throw new Exception("OrcaArcive: bad CTS URN for Analyzed Text URN: ${ln[2]}")
+				}
+				fileName = ln[3]
+				exemplarId = ln[4]
+				serviceUrl = ln[5]
+				description = ln[6]
+				try{
+					orcaFiles.eachFileMatch(ln[3]){ f ->
+						tempOC = new OrcaCollection(urn,versionString,textUrn,f.toFile(),exemplarId,serviceUrl,description)
 						returnArray << tempOC
 					}
 				} catch (Exception e){
@@ -119,6 +125,7 @@ class OrcaArchive {
 	throws Exception {
 		CiteUrn urn
 		String versionString
+		CtsUrn textUrn
 		String fileName
 		String exemplarId
 		String serviceUrl
@@ -132,25 +139,30 @@ class OrcaArchive {
 		Integer num = 0
 		invFile.eachLine{ ln, i ->
 			num++
-			if (ln.tokenize("\t").size() != 6){
-				throw new Exception("OrcaArchive: inventory must have six columns")
+			if (ln.tokenize("\t").size() != 7){
+				throw new Exception("OrcaArchive: inventory must have seven columns")
 			}
 
 			if ( i > 1){ // Why the hell is the eachLine index 1-based?
 				try{
 					urn = new CiteUrn(ln.tokenize("\t")[0])
 				} catch (Exception e){
-						throw new Exception("OrcaArcive: bad CITE URN for collection URN: ${urn}")
+						throw new Exception("OrcaArcive: bad CITE URN for collection URN: ${ln.tokenize("\t")[0]}")
 				}
 
 				versionString = ln.tokenize("\t")[1]
-				fileName = ln.tokenize("\t")[2]
-				exemplarId = ln.tokenize("\t")[3]
-				serviceUrl = ln.tokenize("\t")[4]
-				description = ln.tokenize("\t")[5]
 				try{
-					orcaFiles.eachFileMatch(ln.tokenize("\t")[2]){ f ->
-						tempOC = new OrcaCollection(urn,versionString,f.toFile(),exemplarId,serviceUrl,description)
+					textUrn = new CtsUrn(ln.tokenize("\t")[2])
+				} catch (Exception e){
+						throw new Exception("OrcaArcive: bad CITE URN for collection URN: ${ln.tokenize("\t")[2]}")
+				}
+				fileName = ln.tokenize("\t")[3]
+				exemplarId = ln.tokenize("\t")[4]
+				serviceUrl = ln.tokenize("\t")[5]
+				description = ln.tokenize("\t")[6]
+				try{
+					orcaFiles.eachFileMatch(ln.tokenize("\t")[3]){ f ->
+						tempOC = new OrcaCollection(urn,versionString,textUrn,f.toFile(),exemplarId,serviceUrl,description)
 						returnArray << tempOC
 					}
 				} catch (Exception e){
@@ -189,30 +201,9 @@ class OrcaArchive {
 			OrcaSerializer os = new OrcaSerializer(oc, this.outputDir)
 
 
-
-			// Write Collection Inventory Fragment
-		  // For reference…
-			//		- OrcaRelationUrn
-			//		- AnalyzedText
-			//				verb: http://www.homermultitext.org/orca/rdf/analyzedBy
-			//				inverseVerb: http://www.homermultitext.org/orca/rdf/analyzes
-			//		- Sequence
-			//		- AnalysisUrn
-			//				verb: http://www.homermultitext.org/orca/rdf/analysisFor
-			//				inverseVerb: http://www.homermultitext.org/orca/rdf/hasAnalysis
-			//		- TextDeformation
-			//		- AnalyticalExemplarUrn
-			// Write Analytical Exemplar _and_ CITE-Indices
-			// Index:
-			//	<version-level CTS URN> http://www.homermultitext.org/orca/rdf/exemplifiedBy <exemp-URN>
-			//	<exemp-URN>  http://www.homermultitext.org/orca/rdf/exemplifies <version-URN>
-			//
-
-
-
 			// Get the ORCA file,do a pass to check integrity and grab the CTS stuff
 			// Check:
-			// - all lines have three column
+			// - all lines have three columns
 			// - the first column is a well-formed CTS URN
 			// - the second is a well-formed CITE URN
 			// - all the CTS URNs are identical up to the Version level
@@ -236,12 +227,43 @@ class OrcaArchive {
 
 				// Grab the first CTS URN and make sure all subsequent CTS URNs are identical to the Version level
 				if (i > 0 ){ // skip header row
-					if (i == 1){
-							cts_testUrn = new CtsUrn(ln[0])
+					Boolean isValid = validateExemplarIntegrity(oc.textUrn, ln)
+					if( i > 1 ){
+						if ( !(isValid) ){
+							os.closeFiles()
+							System.err.println("OrcaArchive. Failed exemplar citation validation at line ${i+1}: ${ln}")
+							throw new Exception("OrcaArchive. Failed exemmplar citation validation at line ${i+1}: ${ln}")
+						}
 					}
-					Boolean isValid = validateExemplarIntegrity(cts_testUrn, ln)
 				}
 			}
+
+
+			// Write Collection Inventory Fragment
+			os.serializeCollectionInventory()
+
+			// Write TextInventory fragment
+			os.serializeCtsInventory()
+
+
+		  // For reference…
+			//		- OrcaRelationUrn
+			//		- AnalyzedText
+			//				verb: http://www.homermultitext.org/orca/rdf/analyzedBy
+			//				inverseVerb: http://www.homermultitext.org/orca/rdf/analyzes
+			//		- Sequence
+			//		- AnalysisUrn
+			//				verb: http://www.homermultitext.org/orca/rdf/analysisFor
+			//				inverseVerb: http://www.homermultitext.org/orca/rdf/hasAnalysis
+			//		- TextDeformation
+			//		- AnalyticalExemplarUrn
+			// Write Analytical Exemplar _and_ CITE-Indices
+			// Index:
+			//	<version-level CTS URN> http://www.homermultitext.org/orca/rdf/exemplifiedBy <exemp-URN>
+			//	<exemp-URN>  http://www.homermultitext.org/orca/rdf/exemplifies <version-URN>
+			//
+
+
 
 			os.closeFiles()
 

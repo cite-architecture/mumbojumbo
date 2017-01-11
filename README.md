@@ -5,15 +5,14 @@
 
 ## Data sources ##
 
-*Inventory File* a `.tsv` or `.csv` file identifying ORCA collections with the following four columns:
+*Inventory File* a `.tsv` or `.csv` file identifying ORCA collections with the following six columns:
 
-`CollURN \t VersionString \t Filename \t ExemplarID`
+`OrcaCollectionURN \t VersionString \t Filename \t ExemplarID \t CtsServiceUrl \t Description`
 
-
-*Analysis File* should be documented with three properties:
+*Analysis File* (identified by `Filename`, above) should be documented with three properties:
 
 1. `AnalyzedText` A version-level CTS URN, which may be a range and which may have subreferences.
-2. `AnalysisObjectUrn` A CITE URN identifying the analysis.
+2. `AnalysisDataUrn` A CITE URN pointing to the analysis, expressed as a CITE Object.
 3. `textDeformation` A string that will serve as the 'text content' for a leaf-node in an analytical exemplar.
 
 *Parameters*

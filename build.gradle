@@ -1,5 +1,5 @@
 import com.github.rjeschke.txtmark.*
-import org.apache.tools.ant.filters.ReplaceTokens
+// import org.apache.tools.ant.filters.ReplaceTokens
 
 
 apply plugin: 'groovy'
@@ -36,6 +36,7 @@ version = "0.1.0"
 
 buildscript {
   repositories {
+    jcenter()
     mavenCentral()
   }
   dependencies {
@@ -54,7 +55,7 @@ test {
 
 repositories {
     mavenCentral()
-
+    jcenter()
     // for cite libs:
     maven {
         url "http://beta.hpcc.uh.edu/nexus/content/groups/public"
@@ -66,6 +67,7 @@ dependencies {
     compile	   group: 'org.codehaus.groovy', name: 'groovy-all', version: groovyVersion
 
 	  compile group: 'net.sf.opencsv', name: 'opencsv', version : opencsvVersion
+    compile group: 'xmlunit', name: 'xmlunit', version: '1.6'
 
     compile group: 'edu.harvard.chs', name : 'cite' , version: citeVersion
     runtime group: 'edu.harvard.chs', name : 'cite' , version: citeVersion

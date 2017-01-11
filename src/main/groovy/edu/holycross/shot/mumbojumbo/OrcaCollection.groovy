@@ -13,7 +13,9 @@ class OrcaCollection {
 	CiteUrn collectionUrn
 	String versionString
 	File orcaFile
+	CtsUrn textUrn
 	String exemplarId
+	CtsUrn exemplarUrn
 	String ctsServiceUrl
 	String description
 
@@ -25,14 +27,21 @@ class OrcaCollection {
 	 * @param exemplarid string, the exmplar-id component of an analytical exemplar cts urn
    * @throws exception if if orcafile cannot be found
    */
-	OrcaCollection(CiteUrn collectionUrn, String versionString, File orcaFile, String exemplarId, String ctsServiceUrl, String description)
+	OrcaCollection(CiteUrn collectionUrn, String versionString, CtsUrn textUrn, File orcaFile, String exemplarId, String ctsServiceUrl, String description)
   throws Exception {
     this.collectionUrn = collectionUrn
     this.versionString = versionString
     this.orcaFile = orcaFile
+		this.textUrn = textUrn
 		this.exemplarId = exemplarId
 		this.ctsServiceUrl = ctsServiceUrl
 		this.description = description
+		try{
+			this.exemplarUrn = constructExemplarUrn(textUrn,exemplarId)
+			System.err.println("------ ${exemplarUrn}")
+		} catch (Exception e){
+			throw new Exception("OrcaCollection: failed to make valid CTS URN out of ${textUrn}${exemplarId}: (Reported: ${e})")
+		}
 
 
 		if ( !(this.orcaFile.exists()) ){
@@ -41,6 +50,25 @@ class OrcaCollection {
 
 
   }
+
+	CtsUrn constructExemplarUrn(CtsUrn turn, String eid)
+		throws Exception {
+			CtsUrn exemplarUrn
+			String newUrn
+			try{
+				if (turn.labelForWorkLevel() != 'version'){
+					throw new Exception("textUrn must be version-level")
+				}
+				newUrn = "urn:cts:${turn.ctsNamespace}:${turn.textGroup}.${turn.work}.${turn.version}.${eid}:"
+			  exemplarUrn = new CtsUrn(newUrn)
+
+			} catch (Exception e){
+				throw new Exception(e)
+			}
+
+
+			return exemplarUrn
+	}
 
 
 
