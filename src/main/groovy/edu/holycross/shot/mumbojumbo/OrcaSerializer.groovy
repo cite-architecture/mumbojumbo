@@ -18,6 +18,7 @@ class OrcaSerializer {
 		OutputStreamWriter idxInvOut
 		OutputStreamWriter collInvOut
 		OutputStreamWriter collOut
+		String collOutFilename
 
 
   /** constructor taking an OrcaCollection
@@ -35,6 +36,7 @@ class OrcaSerializer {
 			//File path+name for collection data
 			String collFileName = this.oc.collectionUrn.toString().replaceAll(":","_") + '.tsv'
 			String collOutString = "${this.outputDir}/${collFileName}"
+			this.collOutFilename = collOutString
 			this.collOut = new OutputStreamWriter(new FileOutputStream(collOutString), "UTF-8")
 			this.collOut.write("")
 
@@ -119,7 +121,6 @@ class OrcaSerializer {
 
 	void serializeIndexInventory(){
 		System.err.println("Would serialize Index Fragment for '${this.oc.exemplarId}'")
-
 	}
 
 	String serializeCtsInventory(CtsUrn exemplarUrn){
@@ -154,7 +155,62 @@ class OrcaSerializer {
 
 	}
 
-	Boolean validateCollection(){
+	Boolean validateCollection()
+		throws Exception {
+			try{
+				Boolean returnVal = false
+				if( this.oc.orcaFile.getName().contains(".csv")){
+					 returnVal = validateCsvCollection()
+				} else if (this.oc.orcaFile.getName().contains(".tsv")){
+					returnVal = validateTsvCollection()
+				} else {
+					throw new Exception("OrcaSerializer: orca file must be .tsv or csv.")
+				}
+			} catch(Exception e){
+					throw new Exception("OrcaSerializer validateCollection error: ${e}")
+			}
+	}
+
+	Boolean validateTsvCollection(){
+			// Get the ORCA file,do a pass to check integrity and grab the CTS stuff
+			// Check:
+			// - all lines have three columns
+			// - the first column is a well-formed CTS URN
+			// - the second is a well-formed CITE URN
+			// - all the CTS URNs are identical up to the Version level
+			CtsUrn cts_analyticalExemplarUrn
+			CiteUrn cite_analysisUrn
+			CtsUrn cts_testUrn
+			this.oc.orcaFile.eachLine { ln, i ->
+				if( ln.tokenize("\t").size() != 3 ){
+					throw new Exception("Orca file must have three columns: AnalyzedText, AnalysisURN, textDeformation")
+				}
+				if( i > 1 ){ // skip header
+					try{
+						Boolean isValid = validateOrcaLine(ln.tokenize("\t") as String[])
+					} catch (Exception e){
+						closeFiles()
+						System.err.println("OrcaArchive. Failed validation at line ${i}: ${ln} (Error: " + e + ")")
+						throw new Exception("OrcaArchive. Failed validation at line ${i}: ${ln} (Error: " + e + ")")
+					}
+				}
+
+				// Grab the first CTS URN and make sure all subsequent CTS URNs are identical to the Version level
+				if (i > 1 ){ // skip header row
+					Boolean isValid = this.oc.validateExemplarIntegrity(this.oc.textUrn, ln.tokenize("\t") as String[])
+					if( i > 1 ){
+						if ( !(isValid) ){
+							closeFiles()
+							System.err.println("OrcaArchive. Failed exemplar citation validation at line ${i}: ${ln}")
+							throw new Exception("OrcaArchive. Failed exemplar citation validation at line ${i}: ${ln}")
+						}
+					}
+				}
+			}
+		return true
+	}
+
+	Boolean validateCsvCollection(){
 			// Get the ORCA file,do a pass to check integrity and grab the CTS stuff
 			// Check:
 			// - all lines have three columns
@@ -225,6 +281,52 @@ class OrcaSerializer {
 
 	}
 
+  void serializeOrcaCollection()
+		throws Exception {
+			try{
+				this.collOut.write("URN\tSequence\tAnalyzedText\tAnalysisDataUrn\tTextDeformation\n")
+				Boolean returnVal = false
+				if( this.oc.orcaFile.getName().contains(".csv")){
+					System.err.println("running serializeCsvCollection on ${this.oc.orcaFile.getName()}")
+					 returnVal = serializeCsvCollection()
+				} else if (this.oc.orcaFile.getName().contains(".tsv")){
+					System.err.println("running serializeTsvCollection on ${this.oc.orcaFile.getName()}")
+					returnVal = serializeTsvCollection()
+				} else {
+					throw new Exception("OrcaSerializer: orca file must be .tsv or csv.")
+				}
+				closeFiles()
+			} catch(Exception e){
+					throw new Exception("OrcaSerializer serializeCollection error: ${e}")
+			}
+		}
+
+	void serializeCsvCollection(){
+			CSVReader reader = new CSVReader(new FileReader(this.oc.orcaFile))
+			reader.readAll().eachWithIndex { ln, i -> // 0-delimited
+				if (i > 0){
+					String orcaUrnString = "${this.oc.collectionUrn}.${i+1}.${this.oc.versionString}"
+					CiteUrn orcaUrn = new CiteUrn(orcaUrnString)
+					CtsUrn atUrn = new CtsUrn(ln[0])
+					CiteUrn adUrn = new CiteUrn(ln[1])
+					this.collOut.append("${orcaUrn}\t${i}\t${atUrn}\t${adUrn}\t${ln[2]}\n")
+				}
+			}
+	}
+
+	void serializeTsvCollection(){
+			CSVReader reader = new CSVReader(new FileReader(this.oc.orcaFile))
+			this.oc.orcaFile.eachLine { ln, i -> // 1-delimited
+				if (i > 1){
+					String orcaUrnString = "${this.oc.collectionUrn}.${i}.${this.oc.versionString}"
+					CiteUrn orcaUrn = new CiteUrn(orcaUrnString)
+					CtsUrn atUrn = new CtsUrn(ln.tokenize("\t")[0])
+					CiteUrn adUrn = new CiteUrn(ln.tokenize("\t")[1])
+					this.collOut.append("${orcaUrn}\t${i-1}\t${atUrn}\t${adUrn}\t${ln.tokenize("\t")[2]}\n")
+				}
+			}
+
+	}
 
 	void writeAnalysis(String[] tabbedLine){
 		System.err.println("Would write '${tabbedLine}'.")

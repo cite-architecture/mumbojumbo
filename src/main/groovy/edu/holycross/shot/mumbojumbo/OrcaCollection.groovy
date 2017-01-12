@@ -38,7 +38,6 @@ class OrcaCollection {
 		this.description = description
 		try{
 			this.exemplarUrn = constructExemplarUrn(textUrn,exemplarId)
-			System.err.println("------ ${exemplarUrn}")
 		} catch (Exception e){
 			throw new Exception("OrcaCollection: failed to make valid CTS URN out of ${textUrn}${exemplarId}: (Reported: ${e})")
 		}

@@ -215,6 +215,9 @@ class OrcaArchive {
 			// Write TextInventory fragment
 			os.serializeCtsInventory()
 
+			// Write ORCA Collection File
+			os.serializeOrcaCollection()
+
 
 		  // For reference…
 			//		- OrcaRelationUrn
