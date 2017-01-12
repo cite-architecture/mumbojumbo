@@ -209,14 +209,8 @@ class OrcaArchive {
 			}
 
 
-			// Write Collection Inventory Fragment
-			os.serializeCollectionInventory()
-
-			// Write TextInventory fragment
-			os.serializeCtsInventory()
-
-			// Write ORCA Collection File
-			os.serializeOrcaCollection()
+			// Handles everything, including sequencing
+			os.serializeAll()
 
 
 		  // For reference…

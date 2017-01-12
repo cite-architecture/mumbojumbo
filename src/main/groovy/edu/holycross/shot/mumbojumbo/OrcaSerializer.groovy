@@ -336,6 +336,19 @@ class OrcaSerializer {
 			System.err.printl("Would write exemplar for ${}.")
 	}
 
+	void serializeAll(){
+			// Write Collection Inventory Fragment
+			serializeCollectionInventory()
+
+			// Write TextInventory fragment
+			serializeCtsInventory()
+
+			// Write ORCA Collection File
+			serializeOrcaCollection()
+
+	}
+
+
 }
 
 
