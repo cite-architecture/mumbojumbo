@@ -11,12 +11,19 @@ class OrcaSerializer {
 
 		Path outputDir
 		OrcaCollection oc
+
+		// Output files and their filenames
+		// (You don't have access to the filename for a StreamWriter once it has been constructed.)
 		OutputStreamWriter aeOut
 		String aeOutFilename
 		OutputStreamWriter aeTiOut
+		String aeTiOutFilename
 		OutputStreamWriter idxOut
+		String idxOutFilename
 		OutputStreamWriter idxInvOut
+		String idxInvOutFilename
 		OutputStreamWriter collInvOut
+		String collInvOutFilename
 		OutputStreamWriter collOut
 		String collOutFilename
 
@@ -35,41 +42,38 @@ class OrcaSerializer {
 
 			//File path+name for collection data
 			String collFileName = this.oc.collectionUrn.toString().replaceAll(":","_") + '.tsv'
-			String collOutString = "${this.outputDir}/${collFileName}"
-			this.collOutFilename = collOutString
-			this.collOut = new OutputStreamWriter(new FileOutputStream(collOutString), "UTF-8")
+			this.collOutFilename = "${this.outputDir}/${collFileName}"
+			this.collOut = new OutputStreamWriter(new FileOutputStream(this.collOutFilename), "UTF-8")
 			this.collOut.write("")
 
 			//File path+name for collectionInventoryFragment
-			String collInvFileName = "collInv_" + this.oc.collectionUrn.toString().replaceAll(":","_") + '.xml'
-			String collInvOutString = "${this.outputDir}/${collInvFileName}"
-			this.collInvOut = new OutputStreamWriter(new FileOutputStream(collInvOutString), "UTF-8")
+			String collInvString = "collInv_" + this.oc.collectionUrn.toString().replaceAll(":","_") + '.xml'
+			this.collInvOutFilename = "${this.outputDir}/${collInvString}"
+			this.collInvOut = new OutputStreamWriter(new FileOutputStream(this.collInvOutFilename), "UTF-8")
 			this.collInvOut.write("")
 
 			//File path+name for analytical exemplar
 			String aeFileName = "exemplar_" + this.oc.collectionUrn.toString().replaceAll(":","_") + '.txt'
-			String aeOutString = "${this.outputDir}/${aeFileName}"
-			this.aeOutFilename = aeFileName // we need this later
-			this.aeOut = new OutputStreamWriter(new FileOutputStream(aeOutString), "UTF-8")
+			this.aeOutFilename = "${this.outputDir}/${aeFileName}"
+			this.aeOut = new OutputStreamWriter(new FileOutputStream(this.aeOutFilename), "UTF-8")
 			this.aeOut.write("")
-			this.aeOut.append("URN#Previous#Sequence#Next#Text\n")
 
 			//File path+name for cts text inventory fragment
-			String aeTiFileName = "ti_" + this.oc.collectionUrn.toString().replaceAll(":","_") + '.xml'
-			String aeTiOutString = "${this.outputDir}/${aeTiFileName}"
-			this.aeTiOut = new OutputStreamWriter(new FileOutputStream(aeTiOutString), "UTF-8")
+			String aeTiString= "ti_" + this.oc.collectionUrn.toString().replaceAll(":","_") + '.xml'
+			this.aeTiOutFilename = "${this.outputDir}/${aeTiString}"
+			this.aeTiOut = new OutputStreamWriter(new FileOutputStream(this.aeTiOutFilename), "UTF-8")
 			this.aeTiOut.write("")
 
 			//File path+name for CITE Index for the orca:exemplifies relationship
-			String idxFileName = "idx_" + this.oc.collectionUrn.toString().replaceAll(":","_") + '.tsv'
-			String idxOutString = "${this.outputDir}/${idxFileName}"
-			this.idxOut = new OutputStreamWriter(new FileOutputStream(idxOutString), "UTF-8")
+			String idxFileString = "idx_" + this.oc.collectionUrn.toString().replaceAll(":","_") + '.tsv'
+			this.idxOutFilename = "${this.outputDir}/${idxFileString}"
+			this.idxOut = new OutputStreamWriter(new FileOutputStream(this.idxOutFilename), "UTF-8")
 			this.idxOut.write("")
 
 			//File path+name for CITE Index Inventory for the orca:exemplifies relationship
-			String idxInvFileName = "idxInv_" + this.oc.collectionUrn.toString().replaceAll(":","_") + '.tsv'
-			String idxInvOutString = "${this.outputDir}/${idxInvFileName}"
-			this.idxInvOut = new OutputStreamWriter(new FileOutputStream(idxInvOutString), "UTF-8")
+			String idxInvString = "idxInv_" + this.oc.collectionUrn.toString().replaceAll(":","_") + '.tsv'
+			this.idxInvOutFilename = "${this.outputDir}/${idxInvString}"
+			this.idxInvOut = new OutputStreamWriter(new FileOutputStream(this.idxInvOutFilename), "UTF-8")
 			this.idxInvOut.write("")
 
 		}
@@ -138,7 +142,7 @@ class OrcaSerializer {
 			<!-- Pase into citationconfig.xml -->
 		""")
 		this.aeTiOut.append("""
-			<online urn="${this.oc.exemplarUrn}" type="82xf" docname="${this.aeOutFilename}" nodeformat="text">
+			<online urn="${this.oc.exemplarUrn}" type="82xf" docname="${this.aeOutFilename.tokenize("/")[-1]}" nodeformat="text">
 		""")
 		this.aeTiOut.append("""
 					<!-- YOU MUST CUSTOMIZE THE CITATION INFO!
@@ -309,8 +313,7 @@ class OrcaSerializer {
 					CiteUrn orcaUrn = new CiteUrn(orcaUrnString)
 					CtsUrn atUrn = new CtsUrn(ln[0])
 					CiteUrn adUrn = new CiteUrn(ln[1])
-					this.collOut.append("${orcaUrn}\t${i}\t${atUrn}\t${adUrn}\t${ln[2]}\n")
-				}
+					this.collOut.append("${orcaUrn}\t${i}\t${atUrn}\t${adUrn}\t${ln[2].replaceAll('\t',' ')}\n") }
 			}
 	}
 
@@ -328,12 +331,58 @@ class OrcaSerializer {
 
 	}
 
-	void writeAnalysis(String[] tabbedLine){
-		System.err.println("Would write '${tabbedLine}'.")
+	/** Writes Analytical Exemplar as 82xf file
+	* Depends on previously constructed collOut file.
+	* collOut will be tab-delimited.
+	**/
+
+	void serializeExemplar(){
+			this.aeOut = new OutputStreamWriter(new FileOutputStream(this.aeOutFilename), "UTF-8")
+			this.aeOut.append("URN#Previous#Sequence#Next#Text\n")
+			Integer seq = 0
+			CtsUrn prevUrn = null
+			CtsUrn nextUrn = null
+			ArrayList validReff
+			def prevItem = [:]
+			prevItem["urn"] = ""
+			prevItem["prev"] = ""
+			prevItem["seq"] = ""
+			prevItem["next"] = ""
+			prevItem["text"] = ""
+			File workingCollection = new File(this.collOutFilename)
+			workingCollection.eachLine{ ln, i ->
+				if ( i > 1){
+					prevItem["urn"] = ln.tokenize("\t")[0]
+					if (prevUrn == null){
+						prevItem["prev"] = ""
+					} else {
+						prevItem["prev"] = "${prevUrn}"
+					}
+					prevItem["seq"] = seq
+					prevItem["text"] = ln.tokenize("\t")[4]
+
+					// Work with analyzedText urn
+					validReff = getGVR(new CtsUrn(ln.tokenize("\t")[2]),this.oc.ctsServiceUrl)
+					// …if it is not a range or containing element
+					// …if it is a range or containing element
+				}
+			}
+			this.aeOut.close()
+
 	}
 
-	void writeExemplar(){
-			System.err.printl("Would write exemplar for ${}.")
+	ArrayList getGVR(CtsUrn urn, String serviceUrl){
+		  ArrayList validReff = null
+			String urlString = "${serviceUrl}request=GetValidReff&urn=${urn}&level="
+			String responseString = new URL(urlString).text
+			System.err.println(responseString)
+			return validReff
+	}
+
+	String make82xfNode(){
+			String nodeString
+
+			return nodeString
 	}
 
 	void serializeAll(){
@@ -346,60 +395,10 @@ class OrcaSerializer {
 			// Write ORCA Collection File
 			serializeOrcaCollection()
 
+			// Write analytical exemplar
+			serializeExemplar()
+
 	}
 
 
 }
-
-
-/**
-			//File path+name for collection data
-			String collFileName = oc.collectionUrn.toString().replaceAll(":","_") + '.tsv'
-			String collOutString = "${this.outputDir}/${collFileName}"
-			OutputStreamWriter collOut = new OutputStreamWriter(new FileOutputStream(collOutString), "UTF-8")
-			collOut.write("")
-
-			//File path+name for collectionInventoryFragment
-			String collInvFileName = "collInv_" + oc.collectionUrn.toString().replaceAll(":","_") + '.tsv'
-			String collInvOutString = "${this.outputDir}/${collInvFileName}"
-			OutputStreamWriter collInvOut = new OutputStreamWriter(new FileOutputStream(collInvOutString), "UTF-8")
-			collInvOut.write("")
-
-			//File path+name for analytical exemplar
-			String aeFileName = "exemplar_" + oc.collectionUrn.toString().replaceAll(":","_") + '.tsv'
-			String aeOutString = "${this.outputDir}/${aeFileName}"
-			OutputStreamWriter aeOut = new OutputStreamWriter(new FileOutputStream(aeOutString), "UTF-8")
-			aeOut.write("")
-			aeOut.append("URN#Previous#Sequence#Next#Text\n")
-
-			//File path+name for cts text inventory fragment
-			String aeTiFileName = "ti_" + oc.collectionUrn.toString().replaceAll(":","_") + '.tsv'
-			String aeTiOutString = "${this.outputDir}/${aeTiFileName}"
-			OutputStreamWriter aeTiOut = new OutputStreamWriter(new FileOutputStream(aeTiOutString), "UTF-8")
-			aeTiOut.write("")
-
-			//File path+name for CITE Index for the orca:exemplifies relationship
-			String idxFileName = "idx_" + oc.collectionUrn.toString().replaceAll(":","_") + '.tsv'
-			String idxOutString = "${this.outputDir}/${idxFileName}"
-			OutputStreamWriter idxOut = new OutputStreamWriter(new FileOutputStream(idxOutString), "UTF-8")
-			idxOut.write("")
-
-			//File path+name for CITE Index Inventory for the orca:exemplifies relationship
-			String idxInvFileName = "idxInv_" + oc.collectionUrn.toString().replaceAll(":","_") + '.tsv'
-			String idxInvOutString = "${this.outputDir}/${idxInvFileName}"
-			OutputStreamWriter idxInvOut = new OutputStreamWriter(new FileOutputStream(idxInvOutString), "UTF-8")
-			idxInvOut.write("")
-
-			// Holding variables for CITE Collections
-			CiteUrn cite_orcaRelationUrn
-			CtsUrn cite_analyzedText
-			Number cite_orcaSeq
-			CiteUrn cite_analysisUrn
-			String cite_textDeformation // ***Sanitize LINE-BREAKs and TABs!
-			CtsUrn cite_analyticalExemplarUrn
-
-			// Holding variables for CTS Text
-		  Number cts_sequence
-			CtsUrn cts_prev
-			CtsUrn cts_next
-**/
